@@ -8,7 +8,7 @@ BOT_TOKEN = "8446328283:AAFSjSxDahTorCP8uc2xcjdPBGZzrLGZgj8"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # ==================== ADMIN PANEL ====================
-ADMIN_IDS = [123456789]  # O'Z ID INGIZNI YOZING!
+ADMIN_IDS = [1651941183]  # O'Z ID INGIZNI YOZING!
 
 def is_admin(user_id):
     return user_id in ADMIN_IDS
