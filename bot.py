@@ -123,7 +123,7 @@ def start_command(message):
 📚 **Qo'llab-quvvatlanadigan fanlar:**
 - Matematika (algebra, geometriya)
 - Fizika (mexanika, energiya)  
-- Dasturalsh (Python, Java)
+- Dasturlash (Python, Java)
 - Kimyo (formulalar, reaksiyalar)
 - Tarix va adabiyot
 
@@ -156,7 +156,8 @@ def help_command(message):
 **Qo'shimcha buyruqlar:**
 /test - Botni sinash
 /api - API holati
-/admin - Admin panel
+/admin - Admin panel (faqat adminlar uchun)
+/myid - O'z ID ingizni olish
 """
     bot.send_message(message.chat.id, help_text)
 
@@ -225,7 +226,7 @@ def handle_admin_callback(call):
         return
     
     if call.data == 'admin_stats':
-        user_count = "100"
+        user_count = "100"  # Bu yerda haqiqiy foydalanuvchilar sonini qo'shing
         bot.edit_message_text(
             f"📊 **Bot Statistika:**\n\n👥 Foydalanuvchilar: {user_count}\n🕐 Ish vaqti: 24/7",
             call.message.chat.id,
@@ -246,6 +247,24 @@ def handle_admin_callback(call):
     elif call.data == 'admin_broadcast':
         bot.edit_message_text(
             "📢 **Xabar yuborish**\n\nBarcha foydalanuvchilarga xabar yuborish.\nKeyingi yangilanishda qo'shiladi...",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_settings':
+        bot.edit_message_text(
+            "⚙️ **Sozlamalar**\n\nAPI sozlamalari va bot konfiguratsiyasi.\nKeyingi yangilanishda qo'shiladi...",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_restart':
+        bot.edit_message_text(
+            "🔄 **Bot qayta ishga tushirildi**\n\nBot muvaffaqiyatli qayta ishga tushdi!",
             call.message.chat.id,
             call.message.message_id,
             reply_markup=create_admin_menu(),
@@ -315,6 +334,10 @@ def handle_photos(message):
             )
             
     except Exception as e:
+        try:
+            bot.delete_message(message.chat.id, wait_msg.message_id)
+        except:
+            pass
         bot.reply_to(message, f"❌ Rasm tahlili xatosi: {str(e)}")
 
 @bot.message_handler(func=lambda message: True)
@@ -338,6 +361,10 @@ def handle_text_messages(message):
             bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{response}")
         
     except Exception as e:
+        try:
+            bot.delete_message(message.chat.id, wait_msg.message_id)
+        except:
+            pass
         bot.reply_to(message, f"❌ Xatolik yuz berdi: {str(e)}")
 
 # ==================== BOT START ====================
@@ -347,4 +374,7 @@ print("Gemini API: Faol")
 print("Bot tayyor!")
 
 if __name__ == "__main__":
-    bot.polling()
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print(f"Bot xatosi: {e}")
