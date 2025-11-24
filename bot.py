@@ -1,12 +1,20 @@
+from telebot import types  # <- YANGI QATOR
 import telebot
 import requests
 import json
 import base64
 
 BOT_TOKEN = "8446328283:AAFSjSxDahTorCP8uc2xcjdPBGZzrLGZgj8"
+bot = telebot.TeleBot(BOT_TOKEN)
+
+# ==================== ADMIN PANEL ====================
+ADMIN_IDS = [123456789]  # O'Z ID INGIZNI YOZING!
+
+def is_admin(user_id):
+    return user_id in ADMIN_IDS
 DEEPSEEK_API_KEY = "sk-b60f00175ab24aa4b3ef0925c3f2f51d"  # DeepSeek API kalit
 GEMINI_API_KEY = "AIzaSyBaAonO_-TI-Wfpt5iEbtov3aLvC7VB6dQ"  # Gemini API kalit
-bot = telebot.TeleBot(BOT_TOKEN)
+
 
 # Rasmni base64 formatiga o'tkazish
 def rasmni_base64_ga_otkazish(rasm_url):
@@ -128,6 +136,91 @@ def start_command(message):
 
 ⚡ **Tez va aniq javoblar!**
 """
+    # ==================== ADMIN FUNCTIONS ====================
+@bot.message_handler(commands=['admin'])
+def admin_panel(message):
+    if not is_admin(message.from_user.id):
+        bot.reply_to(message, "❌ Siz admin emassiz!")
+        return
+    
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton('📊 Statistika', callback_data='admin_stats'),
+        types.InlineKeyboardButton('👥 Foydalanuvchilar', callback_data='admin_users')
+    )
+    markup.row(
+        types.InlineKeyboardButton('📢 Xabar yuborish', callback_data='admin_broadcast'),
+        types.InlineKeyboardButton('⚙️ Sozlamalar', callback_data='admin_settings')
+    )
+    markup.row(
+        types.InlineKeyboardButton('🔄 Restart', callback_data='admin_restart'),
+        types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
+    )
+    
+    bot.send_message(message.chat.id, "🛠️ **Admin Panel**", reply_markup=markup, parse_mode='Markdown')
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('admin_'))
+def handle_admin_callback(call):
+    user_id = call.from_user.id
+    if not is_admin(user_id):
+        bot.answer_callback_query(call.id, "❌ Siz admin emassiz!")
+        return
+    
+    if call.data == 'admin_stats':
+        user_count = "100"
+        bot.edit_message_text(
+            f"📊 **Bot Statistika:**\n\n👥 Foydalanuvchilar: {user_count}\n🕐 Ish vaqti: 24/7",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_users':
+        bot.edit_message_text(
+            "👥 **Foydalanuvchilar boshqaruvi**\n\nKeyingi yangilanishda qo'shiladi...",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_broadcast':
+        bot.edit_message_text(
+            "📢 **Xabar yuborish**\n\nBarcha foydalanuvchilarga xabar yuborish.\nKeyingi yangilanishda qo'shiladi...",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_close':
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.answer_callback_query(call.id, "✅ Admin panel yopildi")
+    
+    else:
+        bot.answer_callback_query(call.id, "⚙️ Sozlamalar yangilanmoqda...")
+
+def create_admin_menu():
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton('📊 Statistika', callback_data='admin_stats'),
+        types.InlineKeyboardButton('👥 Foydalanuvchilar', callback_data='admin_users')
+    )
+    markup.row(
+        types.InlineKeyboardButton('📢 Xabar yuborish', callback_data='admin_broadcast'),
+        types.InlineKeyboardButton('⚙️ Sozlamalar', callback_data='admin_settings')
+    )
+    markup.row(
+        types.InlineKeyboardButton('🔄 Restart', callback_data='admin_restart'),
+        types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
+    )
+    return markup
+
+@bot.message_handler(commands=['myid'])
+def get_my_id(message):
+    user_id = message.from_user.id
+    bot.reply_to(message, f"Sizning ID ingiz: `{user_id}`\n\nBu ID ni ADMIN_IDS ga qo'shing!", parse_mode='Markdown')
     bot.send_message(message.chat.id, welcome_text)
 
 @bot.message_handler(commands=['help'])
@@ -252,8 +345,97 @@ def handle_text_messages(message):
     except Exception as e:
         bot.reply_to(message, f"❌ Xatolik yuz berdi: {str(e)}")
 
-print("🚀 BOT ISHGA TUSHDI!")
-print("✅ DeepSeek API: Faol")
-print("✅ Gemini API: Faol")
-print("🤖 Bot tayyor!")
-bot.polling()
+print("BOT ISHGA TUSHDI!");
+print("DeepSeek API: Faol")
+print("Gemini API: Faol")
+print("Bot tayyor!");
+
+# ==================== ADMIN FUNCTIONS ====================
+@bot.message_handler(commands=['admin'])
+def admin_panel(message):
+    if not is_admin(message.from_user.id):
+        bot.reply_to(message, "❌ Siz admin emassiz!")
+        return
+    
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton('📊 Statistika', callback_data='admin_stats'),
+        types.InlineKeyboardButton('👥 Foydalanuvchilar', callback_data='admin_users')
+    )
+    markup.row(
+        types.InlineKeyboardButton('📢 Xabar yuborish', callback_data='admin_broadcast'),
+        types.InlineKeyboardButton('⚙️ Sozlamalar', callback_data='admin_settings')
+    )
+    markup.row(
+        types.InlineKeyboardButton('🔄 Restart', callback_data='admin_restart'),
+        types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
+    )
+    
+    bot.send_message(message.chat.id, "🛠️ **Admin Panel**", reply_markup=markup, parse_mode='Markdown')
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('admin_'))
+def handle_admin_callback(call):
+    user_id = call.from_user.id
+    if not is_admin(user_id):
+        bot.answer_callback_query(call.id, "❌ Siz admin emassiz!")
+        return
+    
+    if call.data == 'admin_stats':
+        user_count = "100"
+        bot.edit_message_text(
+            f"📊 **Bot Statistika:**\n\n👥 Foydalanuvchilar: {user_count}\n🕐 Ish vaqti: 24/7",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_users':
+        bot.edit_message_text(
+            "👥 **Foydalanuvchilar boshqaruvi**\n\nKeyingi yangilanishda qo'shiladi...",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_broadcast':
+        bot.edit_message_text(
+            "📢 **Xabar yuborish**\n\nBarcha foydalanuvchilarga xabar yuborish.\nKeyingi yangilanishda qo'shiladi...",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_admin_menu(),
+            parse_mode='Markdown'
+        )
+    
+    elif call.data == 'admin_close':
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.answer_callback_query(call.id, "✅ Admin panel yopildi")
+    
+    else:
+        bot.answer_callback_query(call.id, "⚙️ Sozlamalar yangilanmoqda...")
+
+def create_admin_menu():
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton('📊 Statistika', callback_data='admin_stats'),
+        types.InlineKeyboardButton('👥 Foydalanuvchilar', callback_data='admin_users')
+    )
+    markup.row(
+        types.InlineKeyboardButton('📢 Xabar yuborish', callback_data='admin_broadcast'),
+        types.InlineKeyboardButton('⚙️ Sozlamalar', callback_data='admin_settings')
+    )
+    markup.row(
+        types.InlineKeyboardButton('🔄 Restart', callback_data='admin_restart'),
+        types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
+    )
+    return markup
+
+@bot.message_handler(commands=['myid'])
+def get_my_id(message):
+    user_id = message.from_user.id
+    bot.reply_to(message, f"Sizning ID ingiz: `{user_id}`\n\nBu ID ni ADMIN_IDS ga qo'shing!", parse_mode='Markdown')
+
+# ==================== BOTNI ISHGA TUSHIRISH ====================
+if __name__ == "__main__":
+    bot.polling()
