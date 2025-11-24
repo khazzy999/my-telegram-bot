@@ -3,12 +3,13 @@ import telebot
 import requests
 import json
 import base64
+import html
 
 BOT_TOKEN = "8446328283:AAFSjSxDahTorCP8uc2xcjdPBGZzrLGZgj8"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # ==================== ADMIN PANEL ====================
-ADMIN_IDS = [1651941183]  # O'Z ID INGIZNI YOZING!
+ADMIN_IDS = [123456789]  # O'Z ID INGIZNI QO'YING
 
 def is_admin(user_id):
     return user_id in ADMIN_IDS
@@ -110,50 +111,66 @@ def deepseek_javob_ber(savol):
     except Exception as e:
         return f"❌ Texnik xatolik: {str(e)}"
 
+# Matnni Markdown xatosiz qilish
+def safe_markdown(text):
+    """Matndagi Maxsus belgilarni to'g'rilash"""
+    if not text:
+        return text
+    
+    # HTML belgilarini to'g'rilash
+    text = html.escape(text)
+    
+    # Markdown maxsus belgilarini ekranlash
+    special_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    for char in special_chars:
+        text = text.replace(char, f'\\{char}')
+    
+    return text
+
 # ==================== BOT COMMANDS ====================
 @bot.message_handler(commands=['start'])
 def start_command(message):
     welcome_text = """
-🤖 **TALABA YORDAMCHI BOTGA XUSH KELIBSIZ!**
+🤖 TALABA YORDAMCHI BOTGA XUSH KELIBSIZ!
 
-🎯 **Men sizga quyidagilarda yordam beraman:**
-• 📝 **Matnli savollar** - DeepSeek AI
-• 📸 **Rasmli savollar** - Google Gemini AI
+🎯 Men sizga quyidagilarda yordam beraman:
+• 📝 Matnli savollar - DeepSeek AI
+• 📸 Rasmli savollar - Google Gemini AI
 
-📚 **Qo'llab-quvvatlanadigan fanlar:**
+📚 Qo'llab-quvvatlanadigan fanlar:
 - Matematika (algebra, geometriya)
 - Fizika (mexanika, energiya)  
 - Dasturlash (Python, Java)
 - Kimyo (formulalar, reaksiyalar)
 - Tarix va adabiyot
 
-💡 **Misol savollar:**
+💡 Misol savollar:
 "Kvadrat tenglama nima?"
 "Python dasturlashni qanday o'rganish mumkin?"
 "Fizikada energiya nima?"
 
-📸 **Rasm yuborish:** Test savollari, masalalar, kodlar rasmini yuboring
+📸 Rasm yuborish: Test savollari, masalalar, kodlar rasmini yuboring
 
-⚡ **Tez va aniq javoblar!**
+⚡ Tez va aniq javoblar!
 """
-    bot.send_message(message.chat.id, welcome_text, parse_mode='Markdown')
+    bot.send_message(message.chat.id, welcome_text)  # parse_mode olib tashlandi
 
 @bot.message_handler(commands=['help'])
 def help_command(message):
     help_text = """
-🆘 **YORDAM**
+🆘 YORDAM
 
-**Qanday foydalanish:**
+Qanday foydalanish:
 1. Savolni yozing yoki rasm yuboring
 2. Kutiling (2-10 soniya)
 3. Javob oling
 
-**Rasm qoidalari:**
+Rasm qoidalari:
 • Yorug' va aniq rasm bo'lsin
 • Matn o'qish mumkin bo'lsin
 • Format: JPEG, PNG
 
-**Qo'shimcha buyruqlar:**
+Qo'shimcha buyruqlar:
 /test - Botni sinash
 /api - API holati
 /admin - Admin panel (faqat adminlar uchun)
@@ -164,31 +181,31 @@ def help_command(message):
 @bot.message_handler(commands=['test'])
 def test_command(message):
     test_text = """
-🧪 **TEST REJIMI**
+🧪 TEST REJIMI
 
 Botni sinab ko'rish uchun:
 
-📝 **Matnli test:** 
+📝 Matnli test: 
 "Salom, qandaysan?" yuboring
 
-📸 **Rasmli test:**
+📸 Rasmli test:
 Matematika masalasi yoki test savoli rasmini yuboring
 
-✅ **Javob kelsa** - bot ishlayapti
-❌ **Javob kelmasa** - /help buyrug'idan foydalaning
+✅ Javob kelsa - bot ishlayapti
+❌ Javob kelmasa - /help buyrug'idan foydalaning
 """
     bot.send_message(message.chat.id, test_text)
 
 @bot.message_handler(commands=['api'])
 def api_command(message):
     api_text = """
-🔧 **API HOLATI:**
+🔧 API HOLATI:
 
-✅ **DeepSeek API:** Faol
-✅ **Gemini API:** Faol  
-✅ **Bot:** Ishlamoqda
+✅ DeepSeek API: Faol
+✅ Gemini API: Faol  
+✅ Bot: Ishlamoqda
 
-📊 **Imkoniyatlar:**
+📊 Imkoniyatlar:
 • Matnli savollarga javob
 • Rasmli savollarni tahlil qilish
 • 24/7 ishlash
@@ -216,7 +233,7 @@ def admin_panel(message):
         types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
     )
     
-    bot.send_message(message.chat.id, "🛠️ **Admin Panel**", reply_markup=markup, parse_mode='Markdown')
+    bot.send_message(message.chat.id, "🛠️ Admin Panel", reply_markup=markup)  # parse_mode olib tashlandi
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('admin_'))
 def handle_admin_callback(call):
@@ -226,49 +243,44 @@ def handle_admin_callback(call):
         return
     
     if call.data == 'admin_stats':
-        user_count = "100"  # Bu yerda haqiqiy foydalanuvchilar sonini qo'shing
+        user_count = "100"
         bot.edit_message_text(
-            f"📊 **Bot Statistika:**\n\n👥 Foydalanuvchilar: {user_count}\n🕐 Ish vaqti: 24/7",
+            f"📊 Bot Statistika:\n\n👥 Foydalanuvchilar: {user_count}\n🕐 Ish vaqti: 24/7",
             call.message.chat.id,
             call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
+            reply_markup=create_admin_menu()
         )
     
     elif call.data == 'admin_users':
         bot.edit_message_text(
-            "👥 **Foydalanuvchilar boshqaruvi**\n\nKeyingi yangilanishda qo'shiladi...",
+            "👥 Foydalanuvchilar boshqaruvi\n\nKeyingi yangilanishda qo'shiladi...",
             call.message.chat.id,
             call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
+            reply_markup=create_admin_menu()
         )
     
     elif call.data == 'admin_broadcast':
         bot.edit_message_text(
-            "📢 **Xabar yuborish**\n\nBarcha foydalanuvchilarga xabar yuborish.\nKeyingi yangilanishda qo'shiladi...",
+            "📢 Xabar yuborish\n\nBarcha foydalanuvchilarga xabar yuborish.\nKeyingi yangilanishda qo'shiladi...",
             call.message.chat.id,
             call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
+            reply_markup=create_admin_menu()
         )
     
     elif call.data == 'admin_settings':
         bot.edit_message_text(
-            "⚙️ **Sozlamalar**\n\nAPI sozlamalari va bot konfiguratsiyasi.\nKeyingi yangilanishda qo'shiladi...",
+            "⚙️ Sozlamalar\n\nAPI sozlamalari va bot konfiguratsiyasi.\nKeyingi yangilanishda qo'shiladi...",
             call.message.chat.id,
             call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
+            reply_markup=create_admin_menu()
         )
     
     elif call.data == 'admin_restart':
         bot.edit_message_text(
-            "🔄 **Bot qayta ishga tushirildi**\n\nBot muvaffaqiyatli qayta ishga tushdi!",
+            "🔄 Bot qayta ishga tushirildi\n\nBot muvaffaqiyatli qayta ishga tushdi!",
             call.message.chat.id,
             call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
+            reply_markup=create_admin_menu()
         )
     
     elif call.data == 'admin_close':
@@ -297,7 +309,26 @@ def create_admin_menu():
 @bot.message_handler(commands=['myid'])
 def get_my_id(message):
     user_id = message.from_user.id
-    bot.reply_to(message, f"Sizning ID ingiz: `{user_id}`\n\nBu ID ni ADMIN_IDS ga qo'shing!", parse_mode='Markdown')
+    bot.reply_to(message, f"Sizning ID ingiz: {user_id}\n\nBu ID ni ADMIN_IDS ga qo'shing!")  # parse_mode olib tashlandi
+
+@bot.message_handler(commands=['myinfo'])
+def get_my_info(message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+    first_name = message.from_user.first_name
+    username = message.from_user.username
+    
+    info_text = f"""
+👤 Foydalanuvchi ma'lumotlari:
+
+🆔 User ID: {user_id}
+💬 Chat ID: {chat_id}
+📛 Ism: {first_name}
+🔗 Username: @{username if username else "Yo'q"}
+
+📍 Admin qilish uchun: ADMIN_IDS = [{user_id}]
+"""
+    bot.reply_to(message, info_text)
 
 # ==================== MESSAGE HANDLERS ====================
 @bot.message_handler(content_types=['photo'])
@@ -316,15 +347,18 @@ def handle_photos(message):
             
             bot.delete_message(message.chat.id, wait_msg.message_id)
             
-            if len(response) > 4000:
-                parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
+            # Xavfsiz matn
+            safe_response = safe_markdown(response)
+            
+            if len(safe_response) > 4000:
+                parts = [safe_response[i:i+4000] for i in range(0, len(safe_response), 4000)]
                 for i, part in enumerate(parts):
                     if i == 0:
-                        bot.send_message(message.chat.id, f"📸 **Rasm tahlili:**\n\n{part}")
+                        bot.send_message(message.chat.id, f"📸 Rasm tahlili:\n\n{part}")
                     else:
                         bot.send_message(message.chat.id, part)
             else:
-                bot.send_message(message.chat.id, f"📸 **Rasm tahlili:**\n\n{response}")
+                bot.send_message(message.chat.id, f"📸 Rasm tahlili:\n\n{safe_response}")
                 
         else:
             bot.edit_message_text(
@@ -350,15 +384,18 @@ def handle_text_messages(message):
         response = deepseek_javob_ber(message.text)
         bot.delete_message(message.chat.id, wait_msg.message_id)
         
-        if len(response) > 4000:
-            parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
+        # Xavfsiz matn
+        safe_response = safe_markdown(response)
+        
+        if len(safe_response) > 4000:
+            parts = [safe_response[i:i+4000] for i in range(0, len(safe_response), 4000)]
             for i, part in enumerate(parts):
                 if i == 0:
-                    bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{part}")
+                    bot.send_message(message.chat.id, f"🤖 Javob:\n\n{part}")
                 else:
                     bot.send_message(message.chat.id, part)
         else:
-            bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{response}")
+            bot.send_message(message.chat.id, f"🤖 Javob:\n\n{safe_response}")
         
     except Exception as e:
         try:
