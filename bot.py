@@ -1,4 +1,4 @@
-from telebot import types  # <- YANGI QATOR
+from telebot import types
 import telebot
 import requests
 import json
@@ -12,9 +12,9 @@ ADMIN_IDS = [123456789]  # O'Z ID INGIZNI YOZING!
 
 def is_admin(user_id):
     return user_id in ADMIN_IDS
-DEEPSEEK_API_KEY = "sk-b60f00175ab24aa4b3ef0925c3f2f51d"  # DeepSeek API kalit
-GEMINI_API_KEY = "AIzaSyBaAonO_-TI-Wfpt5iEbtov3aLvC7VB6dQ"  # Gemini API kalit
 
+DEEPSEEK_API_KEY = "sk-b60f00175ab24aa4b3ef0925c3f2f51d"
+GEMINI_API_KEY = "AIzaSyBaAonO_-TI-Wfpt5iEbtov3aLvC7VB6dQ"
 
 # Rasmni base64 formatiga o'tkazish
 def rasmni_base64_ga_otkazish(rasm_url):
@@ -36,7 +36,6 @@ def gemini_rasm_tahlili(rasm_base64, savol=""):
             "Content-Type": "application/json"
         }
         
-        # Agar savol bo'lmasa, standart savol
         if not savol:
             savol = "Bu rasmda qanday savol yoki masala bor? Batafsil tushuntiring va to'liq javob bering."
         
@@ -85,13 +84,6 @@ def deepseek_javob_ber(savol):
         }
         
         data = {
-        @bot.message_handler(commands=['start'])
-def start_command(message):
-    welcome_text = """
-🤖 **TALABA YORDAMCHI BOTGA XUSH KELIBSIZ!**
-... [qolgan matn]
-"""
-    bot.send_message(message.chat.id, welcome_text, parse_mode='Markdown')  # <- BU QATOR QO'SHILDI
             "model": "deepseek-chat",
             "messages": [
                 {
@@ -118,6 +110,7 @@ def start_command(message):
     except Exception as e:
         return f"❌ Texnik xatolik: {str(e)}"
 
+# ==================== BOT COMMANDS ====================
 @bot.message_handler(commands=['start'])
 def start_command(message):
     welcome_text = """
@@ -143,92 +136,7 @@ def start_command(message):
 
 ⚡ **Tez va aniq javoblar!**
 """
-    # ==================== ADMIN FUNCTIONS ====================
-@bot.message_handler(commands=['admin'])
-def admin_panel(message):
-    if not is_admin(message.from_user.id):
-        bot.reply_to(message, "❌ Siz admin emassiz!")
-        return
-    
-    markup = types.InlineKeyboardMarkup()
-    markup.row(
-        types.InlineKeyboardButton('📊 Statistika', callback_data='admin_stats'),
-        types.InlineKeyboardButton('👥 Foydalanuvchilar', callback_data='admin_users')
-    )
-    markup.row(
-        types.InlineKeyboardButton('📢 Xabar yuborish', callback_data='admin_broadcast'),
-        types.InlineKeyboardButton('⚙️ Sozlamalar', callback_data='admin_settings')
-    )
-    markup.row(
-        types.InlineKeyboardButton('🔄 Restart', callback_data='admin_restart'),
-        types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
-    )
-    
-    bot.send_message(message.chat.id, "🛠️ **Admin Panel**", reply_markup=markup, parse_mode='Markdown')
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith('admin_'))
-def handle_admin_callback(call):
-    user_id = call.from_user.id
-    if not is_admin(user_id):
-        bot.answer_callback_query(call.id, "❌ Siz admin emassiz!")
-        return
-    
-    if call.data == 'admin_stats':
-        user_count = "100"
-        bot.edit_message_text(
-            f"📊 **Bot Statistika:**\n\n👥 Foydalanuvchilar: {user_count}\n🕐 Ish vaqti: 24/7",
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
-        )
-    
-    elif call.data == 'admin_users':
-        bot.edit_message_text(
-            "👥 **Foydalanuvchilar boshqaruvi**\n\nKeyingi yangilanishda qo'shiladi...",
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
-        )
-    
-    elif call.data == 'admin_broadcast':
-        bot.edit_message_text(
-            "📢 **Xabar yuborish**\n\nBarcha foydalanuvchilarga xabar yuborish.\nKeyingi yangilanishda qo'shiladi...",
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=create_admin_menu(),
-            parse_mode='Markdown'
-        )
-    
-    elif call.data == 'admin_close':
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        bot.answer_callback_query(call.id, "✅ Admin panel yopildi")
-    
-    else:
-        bot.answer_callback_query(call.id, "⚙️ Sozlamalar yangilanmoqda...")
-
-def create_admin_menu():
-    markup = types.InlineKeyboardMarkup()
-    markup.row(
-        types.InlineKeyboardButton('📊 Statistika', callback_data='admin_stats'),
-        types.InlineKeyboardButton('👥 Foydalanuvchilar', callback_data='admin_users')
-    )
-    markup.row(
-        types.InlineKeyboardButton('📢 Xabar yuborish', callback_data='admin_broadcast'),
-        types.InlineKeyboardButton('⚙️ Sozlamalar', callback_data='admin_settings')
-    )
-    markup.row(
-        types.InlineKeyboardButton('🔄 Restart', callback_data='admin_restart'),
-        types.InlineKeyboardButton('❌ Yopish', callback_data='admin_close')
-    )
-    return markup
-
-@bot.message_handler(commands=['myid'])
-def get_my_id(message):
-    user_id = message.from_user.id
-    bot.reply_to(message, f"Sizning ID ingiz: `{user_id}`\n\nBu ID ni ADMIN_IDS ga qo'shing!", parse_mode='Markdown')
-    bot.send_message(message.chat.id, welcome_text)
+    bot.send_message(message.chat.id, welcome_text, parse_mode='Markdown')
 
 @bot.message_handler(commands=['help'])
 def help_command(message):
@@ -284,78 +192,6 @@ def api_command(message):
 • 24/7 ishlash
 """
     bot.send_message(message.chat.id, api_text)
-
-# Rasmlarni qayta ishlash (Gemini)
-@bot.message_handler(content_types=['photo'])
-def handle_photos(message):
-    try:
-        wait_msg = bot.send_message(message.chat.id, "📸 Rasm tahlil qilinmoqda...")
-        
-        # Eng katta rasmni olish
-        file_info = bot.get_file(message.photo[-1].file_id)
-        file_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
-        
-        rasm_base64 = rasmni_base64_ga_otkazish(file_url)
-        
-        if rasm_base64:
-            user_caption = message.caption if message.caption else ""
-            
-            response = gemini_rasm_tahlili(rasm_base64, user_caption)
-            
-            bot.delete_message(message.chat.id, wait_msg.message_id)
-            
-            # Javobni bo'laklab yuborish
-            if len(response) > 4000:
-                parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
-                for i, part in enumerate(parts):
-                    if i == 0:
-                        bot.send_message(message.chat.id, f"📸 **Rasm tahlili:**\n\n{part}")
-                    else:
-                        bot.send_message(message.chat.id, part)
-            else:
-                bot.send_message(message.chat.id, f"📸 **Rasm tahlili:**\n\n{response}")
-                
-        else:
-            bot.edit_message_text(
-                "❌ Rasm yuklanmadi. Iltimos, boshqa rasm yuboring.",
-                message.chat.id,
-                wait_msg.message_id
-            )
-            
-    except Exception as e:
-        bot.reply_to(message, f"❌ Rasm tahlili xatosi: {str(e)}")
-
-# Matnli xabarlarni qayta ishlash (DeepSeek)
-@bot.message_handler(func=lambda message: True)
-def handle_text_messages(message):
-    if message.text.startswith('/'):
-        return
-    
-    try:
-        wait_msg = bot.send_message(message.chat.id, "⏳ Javob tayyorlanmoqda...")
-        
-        response = deepseek_javob_ber(message.text)
-        
-        bot.delete_message(message.chat.id, wait_msg.message_id)
-        
-        # Javobni bo'laklab yuborish
-        if len(response) > 4000:
-            parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
-            for i, part in enumerate(parts):
-                if i == 0:
-                    bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{part}")
-                else:
-                    bot.send_message(message.chat.id, part)
-        else:
-            bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{response}")
-        
-    except Exception as e:
-        bot.reply_to(message, f"❌ Xatolik yuz berdi: {str(e)}")
-
-print("BOT ISHGA TUSHDI!");
-print("DeepSeek API: Faol")
-print("Gemini API: Faol")
-print("Bot tayyor!");
 
 # ==================== ADMIN FUNCTIONS ====================
 @bot.message_handler(commands=['admin'])
@@ -443,6 +279,71 @@ def get_my_id(message):
     user_id = message.from_user.id
     bot.reply_to(message, f"Sizning ID ingiz: `{user_id}`\n\nBu ID ni ADMIN_IDS ga qo'shing!", parse_mode='Markdown')
 
-# ==================== BOTNI ISHGA TUSHIRISH ====================
+# ==================== MESSAGE HANDLERS ====================
+@bot.message_handler(content_types=['photo'])
+def handle_photos(message):
+    try:
+        wait_msg = bot.send_message(message.chat.id, "📸 Rasm tahlil qilinmoqda...")
+        
+        file_info = bot.get_file(message.photo[-1].file_id)
+        file_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
+        
+        rasm_base64 = rasmni_base64_ga_otkazish(file_url)
+        
+        if rasm_base64:
+            user_caption = message.caption if message.caption else ""
+            response = gemini_rasm_tahlili(rasm_base64, user_caption)
+            
+            bot.delete_message(message.chat.id, wait_msg.message_id)
+            
+            if len(response) > 4000:
+                parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
+                for i, part in enumerate(parts):
+                    if i == 0:
+                        bot.send_message(message.chat.id, f"📸 **Rasm tahlili:**\n\n{part}")
+                    else:
+                        bot.send_message(message.chat.id, part)
+            else:
+                bot.send_message(message.chat.id, f"📸 **Rasm tahlili:**\n\n{response}")
+                
+        else:
+            bot.edit_message_text(
+                "❌ Rasm yuklanmadi. Iltimos, boshqa rasm yuboring.",
+                message.chat.id,
+                wait_msg.message_id
+            )
+            
+    except Exception as e:
+        bot.reply_to(message, f"❌ Rasm tahlili xatosi: {str(e)}")
+
+@bot.message_handler(func=lambda message: True)
+def handle_text_messages(message):
+    if message.text.startswith('/'):
+        return
+    
+    try:
+        wait_msg = bot.send_message(message.chat.id, "⏳ Javob tayyorlanmoqda...")
+        response = deepseek_javob_ber(message.text)
+        bot.delete_message(message.chat.id, wait_msg.message_id)
+        
+        if len(response) > 4000:
+            parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
+            for i, part in enumerate(parts):
+                if i == 0:
+                    bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{part}")
+                else:
+                    bot.send_message(message.chat.id, part)
+        else:
+            bot.send_message(message.chat.id, f"🤖 **Javob:**\n\n{response}")
+        
+    except Exception as e:
+        bot.reply_to(message, f"❌ Xatolik yuz berdi: {str(e)}")
+
+# ==================== BOT START ====================
+print("BOT ISHGA TUSHDI!")
+print("DeepSeek API: Faol")
+print("Gemini API: Faol")
+print("Bot tayyor!")
+
 if __name__ == "__main__":
     bot.polling()
