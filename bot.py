@@ -85,6 +85,13 @@ def deepseek_javob_ber(savol):
         }
         
         data = {
+        @bot.message_handler(commands=['start'])
+def start_command(message):
+    welcome_text = """
+🤖 **TALABA YORDAMCHI BOTGA XUSH KELIBSIZ!**
+... [qolgan matn]
+"""
+    bot.send_message(message.chat.id, welcome_text, parse_mode='Markdown')  # <- BU QATOR QO'SHILDI
             "model": "deepseek-chat",
             "messages": [
                 {
