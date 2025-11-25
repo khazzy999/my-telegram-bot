@@ -1,18 +1,4 @@
-from flask import Flask, request
-import telebot
-import os
-from bot import bot  # bot.py import qilindi
+from bot import bot
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-app = Flask(__name__)
-
-@app.route("/", methods=["GET"])
-def home():
-    return "Bot ishlayapti!"
-
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    json_str = request.get_data().decode("utf-8")
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "ok", 200
+if __name__ == "__main__":
+    bot.infinity_polling(skip_pending=True)
