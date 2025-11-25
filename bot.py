@@ -159,21 +159,3 @@ def main_chat(message):
 
     bot.send_message(message.chat.id, answer)
 
-```
----
-# 🔥 **app.py (Render uchun 100% mos)**
-```python
-from bot import bot
-
-if __name__ == "__main__":
-    bot.polling(none_stop=True)
-```
-
----
-# 🔥 **requirements.txt**
-```txt
-pyTelegramBotAPI
-requests
-python-dotenv
-```
-
