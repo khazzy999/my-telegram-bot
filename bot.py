@@ -1,11 +1,8 @@
-
 import os
 from dotenv import load_dotenv
 import telebot
 from telebot import types
 import requests
-import json
-import html
 
 load_dotenv()
 
@@ -19,6 +16,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # ==========================
 #       GLOBAL MODES
 # ==========================
+
 USER_MODE = {}
 
 MODES = {
@@ -32,17 +30,14 @@ MODES = {
 # ==========================
 
 def ask_gemini(prompt):
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    data = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    r = requests.post(url, json=data)
     try:
+        r = requests.post(url, json=data)
         return r.json()["candidates"][0]["content"]["parts"][0]["text"]
     except:
         return "❌ Gemini javob bera olmadi."
-
 
 def ask_deepseek(prompt):
     url = "https://api.deepseek.com/v1/chat/completions"
@@ -55,8 +50,8 @@ def ask_deepseek(prompt):
         "messages": [{"role": "user", "content": prompt}]
     }
 
-    r = requests.post(url, headers=headers, json=payload)
     try:
+        r = requests.post(url, headers=headers, json=payload)
         return r.json()["choices"][0]["message"]["content"]
     except:
         return "❌ DeepSeek javob bera olmadi."
@@ -72,31 +67,40 @@ def admin_panel(message):
 
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("📊 Statistika", callback_data="stats"))
-    markup.add(types.InlineKeyboardButton("📩 Foydalanuvchilarga xabar", callback_data="broadcast"))
+    markup.add(types.InlineKeyboardButton("📩 Xabar yuborish", callback_data="broadcast"))
 
-    bot.send_message(message.chat.id, "🔥 *Admin panelga xush kelibsiz!*", parse_mode="Markdown", reply_markup=markup)
+    bot.send_message(
+        message.chat.id,
+        "🔥 *Admin panelga xush kelibsiz!*",
+        parse_mode="Markdown",
+        reply_markup=markup
+    )
 
+# ==========================
+#     ADMIN CALLBACKS
+# ==========================
 
-# ✅ TO'G'RI - f-string ni to'g'ri yozish
-bot.send_message(call.message.chat.id, 
-    f"📊 *Statistika:*\n"
-    f"- Jami foydalanuvchilar: 5342\n"
-    f"- Bugungi aktivlar: 412\n" 
-    f"- Premium: 27", 
-    parse_mode='Markdown')
+@bot.callback_query_handler(func=lambda call: call.data == "stats")
+def show_stats(call):
+    bot.answer_callback_query(call.id)
 
+    stats = (
+        "📊 *Statistika:*\n"
+        "- Jami foydalanuvchilar: 5342\n"
+        "- Bugungi aktivlar: 412\n"
+        "- Premium: 27"
+    )
+
+    bot.send_message(call.message.chat.id, stats, parse_mode="Markdown")
 
 @bot.callback_query_handler(func=lambda call: call.data == "broadcast")
 def broadcast(call):
     bot.answer_callback_query(call.id)
-
     msg = bot.send_message(call.message.chat.id, "✍️ Reklama matnini yuboring:")
     bot.register_next_step_handler(msg, send_broadcast)
 
-
-# Fake broadcast (Render + Free systemda real DB bo‘lmagani uchun demo)
 def send_broadcast(message):
-    bot.reply_to(message, "✅ Xabar barcha foydalanuvchilarga yuborildi (demo).")
+    bot.send_message(message.chat.id, "✅ Xabar barcha foydalanuvchilarga yuborildi (DEMO).")
 
 # ==========================
 #       INLINE SEARCH
@@ -108,7 +112,7 @@ def inline_search(query):
 
     item = types.InlineQueryResultArticle(
         id="1",
-        title="AI javobi ko‘rish",
+        title="AI Javobi",
         description="Matnga AI javobi chiqarish",
         input_message_content=types.InputTextMessageContent(f"🔍 So‘rov: {text}")
     )
@@ -116,7 +120,7 @@ def inline_search(query):
     bot.answer_inline_query(query.id, [item])
 
 # ==========================
-#     MODE SELECTOR /mode
+#        MODE SELECTOR
 # ==========================
 
 @bot.message_handler(commands=['mode'])
@@ -128,9 +132,7 @@ def change_mode(message):
     msg = bot.send_message(message.chat.id, "🛠 Qaysi AI rejimni tanlaysiz?", reply_markup=markup)
     bot.register_next_step_handler(msg, save_mode)
 
-
 def save_mode(message):
-    mode = message.text
     for key, val in MODES.items():
         if message.text == val:
             USER_MODE[message.from_user.id] = key
@@ -155,7 +157,6 @@ def main_chat(message):
     elif mode == "deepseek":
         answer = ask_deepseek(text)
     else:
-        answer = "👋 Oddiy chat rejimi. AI ishlamadi."
+        answer = "👋 Oddiy chat rejimi."
 
     bot.send_message(message.chat.id, answer)
-
