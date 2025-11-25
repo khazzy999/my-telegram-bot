@@ -9,39 +9,30 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-admin_ids_raw = os.getenv("ADMIN_IDS", "")
-if admin_ids_raw.strip() == "":
+
+# ==== SAFE ADMIN IDS LOADER ====
+admin_raw = os.getenv("ADMIN_IDS", "")
+if admin_raw.strip() == "":
     ADMIN_IDS = []
 else:
-    ADMIN_IDS = list(map(int, admin_ids_raw.split(',')))
+    ADMIN_IDS = [int(x) for x in admin_raw.split(",") if x.isdigit()]
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# ==========================
-#       GLOBAL MODES
-# ==========================
 
-USER_MODE = {}
-
-MODES = {
-    "gemini": "Gemini AI",
-    "deepseek": "DeepSeek AI",
-    "normal": "Oddiy Chat"
-}
-
-# ==========================
-#     AI REQUEST FUNCTIONS
-# ==========================
-
+# ===== GEMINI =====
 def ask_gemini(prompt):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
     data = {"contents": [{"parts": [{"text": prompt}]}]}
 
+    r = requests.post(url, json=data)
     try:
-        r = requests.post(url, json=data)
         return r.json()["candidates"][0]["content"]["parts"][0]["text"]
     except:
         return "❌ Gemini javob bera olmadi."
 
+
+# ===== DEEPSEEK =====
 def ask_deepseek(prompt):
     url = "https://api.deepseek.com/v1/chat/completions"
     headers = {
@@ -53,16 +44,23 @@ def ask_deepseek(prompt):
         "messages": [{"role": "user", "content": prompt}]
     }
 
+    r = requests.post(url, headers=headers, json=payload)
     try:
-        r = requests.post(url, headers=headers, json=payload)
         return r.json()["choices"][0]["message"]["content"]
     except:
         return "❌ DeepSeek javob bera olmadi."
 
-# ==========================
-#       ADMIN PANEL
-# ==========================
 
+USER_MODE = {}
+
+MODES = {
+    "gemini": "Gemini AI",
+    "deepseek": "DeepSeek AI",
+    "normal": "Oddiy Chat"
+}
+
+
+# ===== /admin =====
 @bot.message_handler(commands=['admin'])
 def admin_panel(message):
     if message.from_user.id not in ADMIN_IDS:
@@ -70,87 +68,52 @@ def admin_panel(message):
 
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("📊 Statistika", callback_data="stats"))
-    markup.add(types.InlineKeyboardButton("📩 Xabar yuborish", callback_data="broadcast"))
+    markup.add(types.InlineKeyboardButton("📩 Reklama yuborish", callback_data="broadcast"))
 
-    bot.send_message(
-        message.chat.id,
-        "🔥 *Admin panelga xush kelibsiz!*",
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
+    bot.send_message(message.chat.id, "🔥 Admin panel", reply_markup=markup)
 
-# ==========================
-#     ADMIN CALLBACKS
-# ==========================
 
 @bot.callback_query_handler(func=lambda call: call.data == "stats")
-def show_stats(call):
-    bot.answer_callback_query(call.id)
-
-    stats = (
-        "📊 *Statistika:*\n"
-        "- Jami foydalanuvchilar: 5342\n"
-        "- Bugungi aktivlar: 412\n"
-        "- Premium: 27"
+def stats(call):
+    bot.send_message(
+        call.message.chat.id,
+        "📊 Statistika:\n- Jami foydalanuvchilar: 0\n- Bugungi aktiv: 0\n- Premium: 0"
     )
 
-    bot.send_message(call.message.chat.id, stats, parse_mode="Markdown")
 
 @bot.callback_query_handler(func=lambda call: call.data == "broadcast")
 def broadcast(call):
-    bot.answer_callback_query(call.id)
     msg = bot.send_message(call.message.chat.id, "✍️ Reklama matnini yuboring:")
     bot.register_next_step_handler(msg, send_broadcast)
 
+
 def send_broadcast(message):
-    bot.send_message(message.chat.id, "✅ Xabar barcha foydalanuvchilarga yuborildi (DEMO).")
+    bot.reply_to(message, "✅ Reklama yuborildi. (Demo)")
 
-# ==========================
-#       INLINE SEARCH
-# ==========================
 
-@bot.inline_handler(lambda query: len(query.query) > 0)
-def inline_search(query):
-    text = query.query
-
-    item = types.InlineQueryResultArticle(
-        id="1",
-        title="AI Javobi",
-        description="Matnga AI javobi chiqarish",
-        input_message_content=types.InputTextMessageContent(f"🔍 So‘rov: {text}")
-    )
-
-    bot.answer_inline_query(query.id, [item])
-
-# ==========================
-#        MODE SELECTOR
-# ==========================
-
+# ===== /mode =====
 @bot.message_handler(commands=['mode'])
 def change_mode(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for key, value in MODES.items():
-        markup.add(value)
-
-    msg = bot.send_message(message.chat.id, "🛠 Qaysi AI rejimni tanlaysiz?", reply_markup=markup)
+    for key, val in MODES.items():
+        markup.add(val)
+    msg = bot.send_message(message.chat.id, "Rejimni tanlang:", reply_markup=markup)
     bot.register_next_step_handler(msg, save_mode)
+
 
 def save_mode(message):
     for key, val in MODES.items():
         if message.text == val:
             USER_MODE[message.from_user.id] = key
-            return bot.send_message(message.chat.id, f"✅ Rejim o‘zgartirildi: *{val}*", parse_mode='Markdown')
+            return bot.send_message(message.chat.id, f"✅ Rejim: {val}")
 
     bot.send_message(message.chat.id, "❌ Bunday rejim yo‘q.")
 
-# ==========================
-#        MAIN CHAT
-# ==========================
 
+# ===== MAIN CHAT =====
 @bot.message_handler(func=lambda m: True)
 def main_chat(message):
-    user_id = message.from_user.id
-    mode = USER_MODE.get(user_id, "gemini")
+    mode = USER_MODE.get(message.from_user.id, "gemini")
     text = message.text
 
     bot.send_chat_action(message.chat.id, "typing")
