@@ -77,14 +77,13 @@ def admin_panel(message):
     bot.send_message(message.chat.id, "🔥 *Admin panelga xush kelibsiz!*", parse_mode="Markdown", reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "stats")
-def stats(call):
-    bot.answer_callback_query(call.id)
-
-    bot.send_message(call.message.chat.id, f"📊 *Statistika:*
-- Jami foydalanuvchilar: 5342
-- Bugungi aktivlar: 412
-- Premium: 27", parse_mode='Markdown')
+# ✅ TO'G'RI - f-string ni to'g'ri yozish
+bot.send_message(call.message.chat.id, 
+    f"📊 *Statistika:*\n"
+    f"- Jami foydalanuvchilar: 5342\n"
+    f"- Bugungi aktivlar: 412\n" 
+    f"- Premium: 27", 
+    parse_mode='Markdown')
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "broadcast")
