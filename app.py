@@ -1,34 +1,21 @@
-from flask import Flask
-import threading
+from flask import Flask, request
+import telebot
 import os
-import time
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = telebot.TeleBot(BOT_TOKEN)
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route("/", methods=["GET"])
 def home():
-    return "✅ Bot ishlayapti! Render server faol."
+    return "Bot is running on Render!"
 
-@app.route('/health')
-def health():
-    return "🟢 HEALTH CHECK OK"
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("utf-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "ok", 200
 
-def run_bot():
-    while True:
-        try:
-            from bot import bot
-            print("🤖 Bot ishga tushdi...")
-            bot.polling(none_stop=True, interval=0, timeout=30)
-        except Exception as e:
-            print("❌ Bot xatosi:", e)
-            time.sleep(5)  # qayta urinish
-            continue
-
-if __name__ == "__main__":
-    # Bot alohida threadda ishlaydi
-    t = threading.Thread(target=run_bot)
-    t.daemon = True
-    t.start()
-
-    # Flask server ishga tushadi
-    app.run(host='0.0.0.0', port=5000)
+from bot import *
