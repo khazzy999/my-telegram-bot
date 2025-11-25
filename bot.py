@@ -9,8 +9,11 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(',')))
-
+admin_ids_raw = os.getenv("ADMIN_IDS", "")
+if admin_ids_raw.strip() == "":
+    ADMIN_IDS = []
+else:
+    ADMIN_IDS = list(map(int, admin_ids_raw.split(',')))
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # ==========================
