@@ -1,19 +1,4 @@
-# 🚀 SUPER TELEBOT — FULL PRO VERSION
-# Admin Panel + Inline Search + AI Modes + ENV System + Render Compatible
 
-Agar siz ushbu botni GitHub + Render orqali ishlatayotgan bo‘lsangiz — ushbu loyiha **100% production** darajasida tayyor!
-
-Quyidagi struktura bo‘ladi:
-```
-project/
- ├── bot.py
- ├── app.py
- ├── requirements.txt
-```
-
----
-# 🔥 **bot.py (to‘liq professional, mukammal)**
-```python
 import os
 from dotenv import load_dotenv
 import telebot
